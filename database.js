@@ -64,5 +64,5 @@ function autenticar(req, res, next) {
     app.get("/perfil", autenticar, (req, res) => {
         res.json({ email: req.usuario.email });
     });
+}   
 
-    
