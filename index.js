@@ -73,3 +73,48 @@ app.post("/tarefas", async (req, res) => {
     const novaTarefa = await Tarefa.create({ titulo: req.body.titulo });
     res.status(201).json(novaTarefa);
 });
+
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const segredo = process.env.JWT_SECRET || "segredo_temporario";
+
+let usuarios = [];
+
+app.post('/registro', async (req, res) => {
+    const { email, senha } = req.body;
+    const hash = await bcrypt.hash(senha, 10);
+    usuarios.push({ email, senha: hash });
+    res.status(201).json({ message: "Usuário registrado com sucesso!" });
+});
+
+app.post('/login', async (req, res) => {
+
+    const { email, senha } = req.body;
+    const usuario = usuarios.find(u => u.email === email);
+    if (!usuario) return res.status(401).json({ message: "Usuário não encontrado" });
+
+    const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
+    if (!senhaCorreta) return res.status(401).json({ message: "Senha incorreta" });
+
+    const token = jwt.sign({ email }, segredo, { expiresIn: "1h" });
+    res.json({ token });  
+});
+
+function autenticarToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader) return res.status(401).json({erro: "Token não fornecido"});
+  
+    const token = authHeader.split(' ')[1];
+    try {
+      const dados = jwt.verify(token, segredo);
+      req.usuario = dados;
+      next();
+    } catch {
+      res.status(401).json({erro: "Token inválido"});
+    }
+
+    app.get("/perfil", autenticar, (req, res) => {
+        res.json({ mensagem: `Olá, ${req.usuario.email}` });
+    });
+
+  }
