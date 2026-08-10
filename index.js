@@ -61,3 +61,15 @@ app.get("/", (req, res) => {
 
 
 app.listen(3000, () => console.log("API rodando na porta 3000"));
+
+const Tarefa = require("./database");
+
+app.get("/tarefas", async (req, res) => {
+    const tarefas = await Tarefa.find();
+    res.json(tarefas);
+});
+
+app.post("/tarefas", async (req, res) => {
+    const novaTarefa = await Tarefa.create({ titulo: req.body.titulo });
+    res.status(201).json(novaTarefa);
+});
